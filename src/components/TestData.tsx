@@ -16,7 +16,7 @@ const TestData = () => {
     };
 
     useEffect(() => {
-        fetchItems()
+        fetchItems().then();
     }, []);
 
     const handleSubmit = async (e: { preventDefault: () => void; }) => {
@@ -25,7 +25,7 @@ const TestData = () => {
         await api.post('test-data/', { full_name: fullName });
         setFullName('');
         await fetchItems();
-        } catch (error) {
+        } catch {
         alert("Помилка при створенні!");
         }
     };
