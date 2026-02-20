@@ -1,32 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from "../api/test-data-api.ts";
 import type {TestType} from "../types/DataTestType.ts";
+import * as React from "react";
 
 const TestData = () => {
-    const [items, setItems] = useState([]);
+    const [items, setItems] = useState<TestType[]>([]);
     const [fullName, setFullName] = useState('');
 
-    const fetchItems = async () => {
+    const fetchItems = useCallback(async () => {
         try {
-        const response = await api.get('test-data/');
-        setItems(response.data);
+            const response = await api.get('test-data/');
+            setItems(response.data);
         } catch (error) {
-        console.error("Помилка при завантаженні:", error);
+            console.error("Помилка при завантаженні:", error);
         }
-    };
-
-    useEffect(() => {
-        fetchItems().then();
     }, []);
 
-    const handleSubmit = async (e: { preventDefault: () => void; }) => {
+    useEffect(() => {
+       const loadData = async () => {
+            await fetchItems();
+        };
+
+        loadData();
+    }, [fetchItems]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-        await api.post('test-data/', { full_name: fullName });
-        setFullName('');
-        await fetchItems();
+            await api.post('test-data/', { full_name: fullName });
+            setFullName('');
+            await fetchItems();
         } catch {
-        alert("Помилка при створенні!");
+            alert("Помилка при створенні!");
         }
     };
 
