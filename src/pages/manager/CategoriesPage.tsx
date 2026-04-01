@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react";
+import type {Category} from "../../types/Category.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
-
-interface Category {
-  category_number: number;
-  category_name: string;
-}
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -62,13 +58,18 @@ export default function CategoriesPage() {
       setIsModalOpen(false);
       fetchCategories();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setError(data.error);
-      } else if (data && typeof data === 'object') {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setError(errorMessages || "Помилка при збереженні");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setError(errorMessages || "Помилка при збереженні");
+        }
       } else {
         setError("Помилка при збереженні");
       }

@@ -1,39 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import type {Check, SaleItem} from "../../types/Check.ts";
+import type {EmployeeShort} from "../../types/Employee.ts"
 import api from "../../api/api";
 import * as XLSX from "xlsx";
 
-interface Check {
-  check_number: string;
-  id_employee: string;
-  card_number: string | null;
-  print_date: string;
-  sum_total: number;
-  vat: number;
-  empl_surname?: string;
-  empl_name?: string;
-}
-
-interface SaleItem {
-  UPC: string;
-  product_number: number;
-  selling_price: number;
-  product_name?: string;
-}
-
-interface Employee {
-  id_employee: string;
-  empl_surname: string;
-  empl_name: string;
-}
 
 export default function ReceiptsPage() {
   const [checks, setChecks] = useState<Check[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<EmployeeShort[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [filterEmployee, setFilterEmployee] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [summary, setSummary] = useState({ total_sum: 0, total_vat: 0 });
 
   const [detailCheck, setDetailCheck] = useState<Check | null>(null);
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
@@ -42,7 +22,19 @@ export default function ReceiptsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const fetchData = async () => {
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const res = await api.get("/employees/");
+        setEmployees(res.data);
+      } catch (err: unknown) {
+        console.error("Помилка завантаження працівників:", err);
+      }
+    };
+    fetchEmployees();
+  }, []);
+
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = {};
@@ -50,22 +42,26 @@ export default function ReceiptsPage() {
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
 
-      const [empRes, checkRes] = await Promise.all([
-        api.get("/employees/"),
-        api.get("/checks/", { params })
+      const [listRes, summaryRes] = await Promise.all([
+        api.get("/checks/", {params}),
+        api.get("/checks/summary/", {params})
       ]);
-      setEmployees(empRes.data);
-      setChecks(checkRes.data);
-    } catch (err) {
-      console.error(err);
+
+      setChecks(listRes.data);
+      setSummary(summaryRes.data);
+    } catch (err: unknown) {
+      console.error("Помилка завантаження даних чеків:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterEmployee, dateFrom, dateTo]);
 
   useEffect(() => {
-    fetchData();
-  }, [filterEmployee, dateFrom, dateTo]);
+    const delayDebounceFn = setTimeout(() => {
+      fetchData();
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [fetchData]);
 
   const handleViewDetail = async (check: Check) => {
     setDetailCheck(check);
@@ -154,31 +150,66 @@ export default function ReceiptsPage() {
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4">
-          <select
+      <div
+          className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 items-end">
+        <select
             value={filterEmployee}
             onChange={e => setFilterEmployee(e.target.value)}
             className="flex-1 sm:max-w-xs px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-          >
-            <option value="">Усі касири</option>
-            {employees.map(e => (
+        >
+          <option value="">Усі касири</option>
+          {employees.map(e => (
               <option key={e.id_employee} value={e.id_employee}>{e.empl_surname} {e.empl_name}</option>
-            ))}
-          </select>
+          ))}
+        </select>
+
+        <div className="flex-1 space-y-1">
+          <label className="text-xs text-gray-500 ml-1">Дата з</label>
           <input
-            type="date"
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-            className="flex-1 sm:max-w-xs px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Дата з"
+              type="datetime-local"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
+        </div>
+
+        <div className="flex-1 space-y-1">
+          <label className="text-xs text-gray-500 ml-1">Дата по</label>
           <input
-            type="date"
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
-            className="flex-1 sm:max-w-xs px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Дата по"
+              type="datetime-local"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
+        </div>
+
+        <button
+            onClick={() => {
+              setDateFrom("");
+              setDateTo("");
+              setFilterEmployee("");
+            }}
+            className="px-4 py-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+        >
+          Очистити все
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-indigo-500">
+          <span className="text-sm font-medium text-gray-500 uppercase">
+            {filterEmployee ? "Сума продажів касира" : "Загальна сума продажів"}
+          </span>
+          <div className="text-3xl font-bold text-gray-900 mt-1">
+            {Number(summary.total_sum).toFixed(2)} <span className="text-lg font-normal text-gray-400">грн</span>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
+          <span className="text-sm font-medium text-gray-500 uppercase">Всього ПДВ (20%)</span>
+          <div className="text-3xl font-bold text-gray-900 mt-1">
+            {Number(summary.total_vat).toFixed(2)} <span className="text-lg font-normal text-gray-400">грн</span>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white shadow-sm border border-gray-100 rounded-lg overflow-x-auto">
@@ -202,7 +233,7 @@ export default function ReceiptsPage() {
                   {c.empl_surname ? `${c.empl_surname} ${c.empl_name}` : getEmployeeName(c.id_employee)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.card_number || "—"}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.print_date}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(c.print_date).toLocaleString('uk-UA')}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{Number(c.sum_total).toFixed(2)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{Number(c.vat).toFixed(2)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right space-x-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">

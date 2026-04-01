@@ -1,21 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import type {Employee} from "../../types/Employee.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
-
-interface Employee {
-  id_employee: string;
-  empl_surname: string;
-  empl_name: string;
-  empl_patronymic: string | null;
-  empl_role: string;
-  salary: number;
-  date_of_birth: string;
-  date_of_start: string;
-  phone_number: string;
-  city: string;
-  street: string;
-  zip_code: string;
-}
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -46,29 +32,31 @@ export default function EmployeesPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/employees/", { params: { empl_surname: searchSurname || undefined } });
+      const res = await api.get("/employees/", {
+        params: {empl_surname: searchSurname || undefined}
+      });
       let data: Employee[] = res.data;
       if (filterRole) {
         data = data.filter((e) => e.empl_role === filterRole);
       }
       const sorted = data.sort((a, b) => a.empl_surname.localeCompare(b.empl_surname));
       setEmployees(sorted);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchSurname, filterRole]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchData();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchSurname, filterRole]);
+  }, [fetchData]);
 
   const handleOpenModal = (employee?: Employee) => {
     setError("");
@@ -118,7 +106,7 @@ export default function EmployeesPage() {
       return;
     }
     try {
-      const payload: any = {
+      const payload: Record<string, string | number | boolean | null> = {
         empl_surname: formData.empl_surname,
         empl_name: formData.empl_name,
         empl_patronymic: formData.empl_patronymic || null,
@@ -142,13 +130,18 @@ export default function EmployeesPage() {
       setIsModalOpen(false);
       fetchData();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setError(data.error);
-      } else if (data && typeof data === 'object') {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setError(errorMessages || "Помилка при збереженні");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setError(errorMessages || "Помилка при збереженні");
+        }
       } else {
         setError("Помилка при збереженні");
       }
@@ -271,7 +264,7 @@ export default function EmployeesPage() {
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Посада</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Зарплата</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Телефон</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Місто</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Адреса</th>
               <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Дії</th>
             </tr>
           </thead>
@@ -293,7 +286,12 @@ export default function EmployeesPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{e.salary}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{e.phone_number}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{e.city}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div className="flex flex-col">
+                    <span className="text-gray-900 font-medium">{e.city}</span>
+                    <span className="text-gray-500 text-xs">{`${e.street} (${e.zip_code})`}</span>
+                  </div>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right space-x-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                   <button onClick={() => handleOpenModal(e)} className="text-indigo-600 hover:text-indigo-900 cursor-pointer">Редагувати</button>
                   <button onClick={() => handleDeleteClick(e.id_employee)} className="text-red-500 hover:text-red-700 cursor-pointer">Видалити</button>

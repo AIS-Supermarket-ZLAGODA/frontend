@@ -1,24 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import type {CustomerCard} from "../../types/CustomerCard.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
-
-interface CustomerCard {
-  card_number: string;
-  cust_surname: string;
-  cust_name: string;
-  cust_patronymic: string | null;
-  phone_number: string;
-  city: string | null;
-  street: string | null;
-  zip_code: string | null;
-  percent: number;
-}
 
 export default function ManagerClientsPage() {
   const [customers, setCustomers] = useState<CustomerCard[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [searchSurname, setSearchSurname] = useState("");
+  const [filterPercent, setFilterPercent] = useState<string>("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCustomer, setCurrentCustomer] = useState<CustomerCard | null>(null);
@@ -39,27 +29,41 @@ export default function ManagerClientsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = {};
-      if (searchSurname) params.cust_surname = searchSurname;
-      const res = await api.get("/customers/", { params });
-      const sorted = res.data.sort((a: CustomerCard, b: CustomerCard) => a.cust_surname.localeCompare(b.cust_surname));
-      setCustomers(sorted);
-    } catch (err) {
+
+      if (searchSurname)
+        params.surname = searchSurname;
+      else if (filterPercent !== "")
+        params.percent = filterPercent;
+
+      const res = await api.get("/customers/", {params});
+      setCustomers(res.data);
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchSurname, filterPercent]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchData();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchSurname]);
+  }, [fetchData]);
+
+  const handleSurnameChange = (val: string) => {
+    setSearchSurname(val);
+    if (val) setFilterPercent("");
+  };
+
+  const handlePercentChange = (val: string) => {
+    setFilterPercent(val);
+    if (val) setSearchSurname("");
+  };
 
   const handleOpenModal = (customer?: CustomerCard) => {
     setError("");
@@ -118,13 +122,18 @@ export default function ManagerClientsPage() {
       setIsModalOpen(false);
       fetchData();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setError(data.error);
-      } else if (data && typeof data === 'object') {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setError(errorMessages || "Помилка при збереженні");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setError(errorMessages || "Помилка при збереженні");
+        }
       } else {
         setError("Помилка при збереженні");
       }
@@ -219,14 +228,32 @@ export default function ManagerClientsPage() {
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4">
-          <input
-            type="text"
-            placeholder="Пошук за прізвищем..."
-            value={searchSurname}
-            onChange={e => setSearchSurname(e.target.value)}
-            className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-          />
+        {/* Пошук за прізвищем */}
+        <div className="flex-1 relative">
+            <input
+                type="text"
+                placeholder="Шукати за прізвищем..."
+                value={searchSurname}
+                onChange={e => handleSurnameChange(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+            />
+        </div>
+
+        <div className="hidden sm:flex items-center text-gray-300 font-light">АБО</div>
+
+        {/* Пошук за відсотком */}
+        <div className="w-full sm:w-64 relative">
+            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">%</div>
+            <input type="number" min="0" max="100"
+                   placeholder="Фільтр за знижкою..."
+                   value={filterPercent}
+                   onChange={e => handlePercentChange(e.target.value)}
+                   className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+            />
+        </div>
       </div>
+
+
 
       <div className="bg-white shadow-sm border border-gray-100 rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">

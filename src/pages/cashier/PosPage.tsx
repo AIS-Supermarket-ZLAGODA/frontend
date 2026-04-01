@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../../api/api";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContextLogic";
 
 interface StoreProduct {
   UPC: string;
@@ -164,15 +164,20 @@ export default function PosPage() {
       clearCustomer();
       fetchProducts();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setErrorMessage(data.error);
-      } else if (data && typeof data === "object") {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setErrorMessage(errorMessages || "Помилка при створенні чеку");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setErrorMessage(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setErrorMessage(errorMessages || "Помилка при збереженні");
+        }
       } else {
-        setErrorMessage("Помилка при створенні чеку");
+        setErrorMessage("Помилка при збереженні");
       }
     } finally {
       setCheckoutLoading(false);

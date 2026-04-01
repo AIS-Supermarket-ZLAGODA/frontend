@@ -1,4 +1,4 @@
-import { useAuth } from "../../context/AuthContext";
+import {useAuth} from "../../context/AuthContextLogic.ts";
 
 export default function ProfilePage() {
   const { user } = useAuth();

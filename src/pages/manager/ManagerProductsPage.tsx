@@ -1,19 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import type {Category} from "../../types/Category.ts";
+import type {Product} from "../../types/Product.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
-
-interface Product {
-  id_product: number;
-  category_number: number;
-  product_name: string;
-  producer: string;
-  characteristics: string;
-}
-
-interface Category {
-  category_number: number;
-  category_name: string;
-}
 
 export default function ManagerProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,6 +15,13 @@ export default function ManagerProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
 
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [statsProduct, setStatsProduct] = useState<Product | null>(null);
+  const [totalSold, setTotalSold] = useState<number | null>(null);
+  const [statsDateFrom, setStatsDateFrom] = useState("");
+  const [statsDateTo, setStatsDateTo] = useState("");
+  const [statsLoading, setStatsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     category_number: "",
     product_name: "",
@@ -37,29 +33,54 @@ export default function ManagerProductsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [catRes, prodRes] = await Promise.all([
         api.get("/categories/"),
-        api.get("/products/", { params: { product_name: searchName, category_name: searchCategory } })
+        api.get("/products/", {params: {product_name: searchName, category_name: searchCategory}})
       ]);
       setCategories(catRes.data);
       const sorted = prodRes.data.sort((a: Product, b: Product) => a.product_name.localeCompare(b.product_name));
       setProducts(sorted);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchName, searchCategory]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchData();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchName, searchCategory]);
+  }, [fetchData]);
+
+  const fetchProductStats = async () => {
+    if (!statsProduct) return;
+    setStatsLoading(true);
+    try {
+      const params: Record<string, string> = {};
+      if (statsDateFrom) params.date_from = statsDateFrom;
+      if (statsDateTo) params.date_to = statsDateTo;
+
+      const res = await api.get(`/products/${statsProduct.id_product}/stats/`, {params});
+      setTotalSold(res.data.total_sold);
+    } catch (err) {
+      console.error("Помилка отримання статистики:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  const handleOpenStats = (product: Product) => {
+    setStatsProduct(product);
+    setTotalSold(null);
+    setStatsDateFrom("");
+    setStatsDateTo("");
+    setIsStatsModalOpen(true);
+  };
 
   const handleOpenModal = (product?: Product) => {
     setError("");
@@ -103,13 +124,18 @@ export default function ManagerProductsPage() {
       setIsModalOpen(false);
       fetchData();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setError(data.error);
-      } else if (data && typeof data === 'object') {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setError(errorMessages || "Помилка при збереженні");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setError(errorMessages || "Помилка при збереженні");
+        }
       } else {
         setError("Помилка при збереженні");
       }
@@ -239,8 +265,18 @@ export default function ManagerProductsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.producer}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right space-x-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleOpenModal(p)} className="text-indigo-600 hover:text-indigo-900 cursor-pointer">Редагувати</button>
-                    <button onClick={() => handleDeleteClick(p.id_product)} className="text-red-500 hover:text-red-700 cursor-pointer">Видалити</button>
+                    <button
+                        onClick={() => handleOpenStats(p)}
+                        className="text-emerald-600 hover:text-emerald-900 cursor-pointer"
+                    >
+                      Статистика
+                    </button>
+                    <button onClick={() => handleOpenModal(p)}
+                            className="text-indigo-600 hover:text-indigo-900 cursor-pointer">Редагувати
+                    </button>
+                    <button onClick={() => handleDeleteClick(p.id_product)}
+                            className="text-red-500 hover:text-red-700 cursor-pointer">Видалити
+                    </button>
                   </td>
                 </tr>
               )
@@ -370,6 +406,67 @@ export default function ManagerProductsPage() {
             )}
           </div>
         </div>
+      )}
+
+      {isStatsModalOpen && statsProduct && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl relative">
+              <h3 className="text-xl font-bold mb-2 text-gray-800">Статистика продажів</h3>
+              <p className="text-sm text-gray-500 mb-6">{statsProduct.product_name} ({statsProduct.producer})</p>
+
+              <div className="space-y-4 mb-8">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 ml-1">Дата з</label>
+                    <input
+                        type="date"
+                        value={statsDateFrom}
+                        onChange={e => setStatsDateFrom(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 ml-1">Дата по</label>
+                    <input
+                        type="date"
+                        value={statsDateTo}
+                        onChange={e => setStatsDateTo(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                    onClick={fetchProductStats}
+                    disabled={statsLoading}
+                    className="w-full py-2.5 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition-colors shadow-sm disabled:bg-emerald-300"
+                >
+                  {statsLoading ? "Рахуємо..." : "Визначити кількість"}
+                </button>
+              </div>
+
+              {totalSold !== null && (
+                  <div
+                      className="bg-emerald-50 border border-emerald-100 rounded-xl p-6 text-center animate-in fade-in zoom-in duration-300">
+                    <span
+                        className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Продано одиниць</span>
+                    <div className="text-5xl font-black text-emerald-800 mt-1">
+                      {totalSold}
+                    </div>
+                    <p className="text-[10px] text-emerald-400 mt-2 uppercase">за вказаний період</p>
+                  </div>
+              )}
+
+              <div className="mt-8">
+                <button
+                    onClick={() => setIsStatsModalOpen(false)}
+                    className="w-full px-5 py-2 text-gray-500 font-medium hover:text-gray-800 transition-colors"
+                >
+                  Закрити
+                </button>
+              </div>
+            </div>
+          </div>
       )}
     </div>
   );
