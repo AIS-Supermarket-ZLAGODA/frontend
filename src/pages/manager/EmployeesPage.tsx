@@ -257,7 +257,7 @@ export default function EmployeesPage() {
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Посада</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Зарплата</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Телефон</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Місто</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Адреса</th>
               <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Дії</th>
             </tr>
           </thead>
@@ -279,7 +279,12 @@ export default function EmployeesPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{e.salary}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{e.phone_number}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{e.city}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div className="flex flex-col">
+                    <span className="text-gray-900 font-medium">{e.city}</span>
+                    <span className="text-gray-500 text-xs">{`${e.street} (${e.zip_code})`}</span>
+                  </div>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right space-x-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                   <button onClick={() => handleOpenModal(e)} className="text-indigo-600 hover:text-indigo-900 cursor-pointer">Редагувати</button>
                   <button onClick={() => handleDeleteClick(e.id_employee)} className="text-red-500 hover:text-red-700 cursor-pointer">Видалити</button>
