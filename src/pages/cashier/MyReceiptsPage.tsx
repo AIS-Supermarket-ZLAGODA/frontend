@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContextLogic.ts"
 
 interface Check {
   check_number: string;
@@ -36,28 +36,26 @@ export default function MyReceiptsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
-  const fetchChecks = async () => {
+  const fetchChecks = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const params: Record<string, string> = { id_employee: user.id_employee };
-      if (dateFrom) params.start_date = dateFrom;
-      if (dateTo) params.end_date = dateTo;
-      const res = await api.get("/checks/", { params });
-      const sorted = res.data.sort(
-        (a: Check, b: Check) => new Date(b.print_date).getTime() - new Date(a.print_date).getTime()
-      );
-      setChecks(sorted);
-    } catch (err) {
+      const params: Record<string, string> = {id_employee: user.id_employee};
+      if (dateFrom) params.date_from = dateFrom;
+      if (dateTo) params.date_to = dateTo;
+
+      const res = await api.get("/checks/", {params});
+      setChecks(res.data);
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchChecks();
-  }, [user]);
+  }, [fetchChecks]);
 
   const handleFilter = () => {
     fetchChecks();

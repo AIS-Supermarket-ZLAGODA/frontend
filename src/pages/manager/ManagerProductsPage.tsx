@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type {Category} from "../../types/Category.ts";
 import type {Product} from "../../types/Product.ts";
 import api from "../../api/api";
@@ -33,35 +33,35 @@ export default function ManagerProductsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [catRes, prodRes] = await Promise.all([
         api.get("/categories/"),
-        api.get("/products/", { params: { product_name: searchName, category_name: searchCategory } })
+        api.get("/products/", {params: {product_name: searchName, category_name: searchCategory}})
       ]);
       setCategories(catRes.data);
       const sorted = prodRes.data.sort((a: Product, b: Product) => a.product_name.localeCompare(b.product_name));
       setProducts(sorted);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchName, searchCategory]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchData();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchName, searchCategory]);
+  }, [fetchData]);
 
   const fetchProductStats = async () => {
     if (!statsProduct) return;
     setStatsLoading(true);
     try {
-      const params: any = {};
+      const params: Record<string, string> = {};
       if (statsDateFrom) params.date_from = statsDateFrom;
       if (statsDateTo) params.date_to = statsDateTo;
 
@@ -124,13 +124,18 @@ export default function ManagerProductsPage() {
       setIsModalOpen(false);
       fetchData();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setError(data.error);
-      } else if (data && typeof data === 'object') {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setError(errorMessages || "Помилка при збереженні");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setError(errorMessages || "Помилка при збереженні");
+        }
       } else {
         setError("Помилка при збереженні");
       }

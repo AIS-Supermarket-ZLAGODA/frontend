@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
-import { useAuth, type Role } from "../context/AuthContext";
 import type { ReactNode } from "react";
+import type {Role} from "../types/Auth.ts";
+import {useAuth} from "../context/AuthContextLogic.ts";
 
 interface Props {
   allowedRole: Role;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type {Employee} from "../../types/Employee.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
@@ -32,29 +32,31 @@ export default function EmployeesPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/employees/", { params: { empl_surname: searchSurname || undefined } });
+      const res = await api.get("/employees/", {
+        params: {empl_surname: searchSurname || undefined}
+      });
       let data: Employee[] = res.data;
       if (filterRole) {
         data = data.filter((e) => e.empl_role === filterRole);
       }
       const sorted = data.sort((a, b) => a.empl_surname.localeCompare(b.empl_surname));
       setEmployees(sorted);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchSurname, filterRole]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchData();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchSurname, filterRole]);
+  }, [fetchData]);
 
   const handleOpenModal = (employee?: Employee) => {
     setError("");
@@ -104,7 +106,7 @@ export default function EmployeesPage() {
       return;
     }
     try {
-      const payload: any = {
+      const payload: Record<string, string | number | boolean | null> = {
         empl_surname: formData.empl_surname,
         empl_name: formData.empl_name,
         empl_patronymic: formData.empl_patronymic || null,
@@ -128,13 +130,18 @@ export default function EmployeesPage() {
       setIsModalOpen(false);
       fetchData();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setError(data.error);
-      } else if (data && typeof data === 'object') {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setError(errorMessages || "Помилка при збереженні");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setError(errorMessages || "Помилка при збереженні");
+        }
       } else {
         setError("Помилка при збереженні");
       }

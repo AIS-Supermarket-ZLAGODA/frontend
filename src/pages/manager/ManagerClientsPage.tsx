@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type {CustomerCard} from "../../types/CustomerCard.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
@@ -29,7 +29,7 @@ export default function ManagerClientsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = {};
@@ -39,14 +39,21 @@ export default function ManagerClientsPage() {
       else if (filterPercent !== "")
         params.percent = filterPercent;
 
-      const res = await api.get("/customers/", { params });
+      const res = await api.get("/customers/", {params});
       setCustomers(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchSurname, filterPercent]);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchData();
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [fetchData]);
 
   const handleSurnameChange = (val: string) => {
     setSearchSurname(val);
@@ -57,13 +64,6 @@ export default function ManagerClientsPage() {
     setFilterPercent(val);
     if (val) setSearchSurname("");
   };
-
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchData();
-    }, 300);
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchSurname, filterPercent]);
 
   const handleOpenModal = (customer?: CustomerCard) => {
     setError("");
@@ -122,13 +122,18 @@ export default function ManagerClientsPage() {
       setIsModalOpen(false);
       fetchData();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setError(data.error);
-      } else if (data && typeof data === 'object') {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setError(errorMessages || "Помилка при збереженні");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setError(errorMessages || "Помилка при збереженні");
+        }
       } else {
         setError("Помилка при збереженні");
       }

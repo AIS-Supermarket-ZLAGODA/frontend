@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type {StoreProduct, StoreProductDetail} from "../../types/StoreProduct.ts";
 import type {ProductShort} from "../../types/Product.ts";
 import api from "../../api/api";
@@ -33,33 +33,33 @@ export default function StorePage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
+      const params: Record<string, string | boolean> = {};
       if (searchName) params.product_name = searchName;
       if (orderByQuantity) params.order_by_products_number = true;
       if (promotionalFilter !== "") params.promotional_product_filter = promotionalFilter;
 
       const [prodRes, storeRes] = await Promise.all([
         api.get("/products/"),
-        api.get("/store-products/", { params })
+        api.get("/store-products/", {params})
       ]);
       setProducts(prodRes.data);
       setStoreProducts(storeRes.data);
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      console.error("Помилка завантаження товарів магазину:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchName, orderByQuantity, promotionalFilter]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchData();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchName, orderByQuantity, promotionalFilter]);
+  }, [fetchData]);
 
   const handleViewDetails = async (upc: string) => {
     setDetailsLoading(true);
@@ -123,13 +123,18 @@ export default function StorePage() {
       setIsModalOpen(false);
       fetchData();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setError(data.error);
-      } else if (data && typeof data === 'object') {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setError(errorMessages || "Помилка при збереженні");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setError(errorMessages || "Помилка при збереженні");
+        }
       } else {
         setError("Помилка при збереженні");
       }

@@ -90,13 +90,18 @@ export default function CashierClientsPage() {
       setIsModalOpen(false);
       fetchCustomers(searchSurname);
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: any } };
+      const axiosErr = err as { response?: { data?: Record<string, unknown> } };
       const data = axiosErr.response?.data;
-      if (data?.error) {
-        setError(data.error);
-      } else if (data && typeof data === "object") {
-        const errorMessages = Object.values(data).flat().join(" | ");
-        setError(errorMessages || "Помилка при збереженні");
+
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } else {
+          const errorMessages = Object.values(data)
+              .flat()
+              .join(" | ");
+          setError(errorMessages || "Помилка при збереженні");
+        }
       } else {
         setError("Помилка при збереженні");
       }

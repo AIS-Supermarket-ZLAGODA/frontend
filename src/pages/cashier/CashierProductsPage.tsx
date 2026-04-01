@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
 
 interface Product {
@@ -22,29 +22,36 @@ export default function CashierProductsPage() {
   const [searchName, setSearchName] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      const params: Record<string, string> = {};
+      if (searchName) params.product_name = searchName;
+      if (searchCategory) params.category_name = searchCategory;
+
       const [catRes, prodRes] = await Promise.all([
         api.get("/categories/"),
-        api.get("/products/", { params: { product_name: searchName, category_name: searchCategory } })
+        api.get("/products/", {params})
       ]);
+
       setCategories(catRes.data);
-      const sorted = prodRes.data.sort((a: Product, b: Product) => a.product_name.localeCompare(b.product_name));
+      const sorted = prodRes.data.sort((a: Product, b: Product) =>
+          a.product_name.localeCompare(b.product_name)
+      );
       setProducts(sorted);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchName, searchCategory]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchData();
-    }, 300); // 300ms debounce
+    }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchName, searchCategory]);
+  }, [fetchData]);
 
   return (
     <div className="space-y-6">

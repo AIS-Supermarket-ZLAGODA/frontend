@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type {Check, SaleItem} from "../../types/Check.ts";
 import type {EmployeeShort} from "../../types/Employee.ts"
 import api from "../../api/api";
@@ -27,14 +27,14 @@ export default function ReceiptsPage() {
       try {
         const res = await api.get("/employees/");
         setEmployees(res.data);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Помилка завантаження працівників:", err);
       }
     };
     fetchEmployees();
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = {};
@@ -49,19 +49,19 @@ export default function ReceiptsPage() {
 
       setChecks(listRes.data);
       setSummary(summaryRes.data);
-    } catch (err) {
-      console.error("Помилка:", err);
+    } catch (err: unknown) {
+      console.error("Помилка завантаження даних чеків:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterEmployee, dateFrom, dateTo]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchData();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [filterEmployee, dateFrom, dateTo]);
+  }, [fetchData]);
 
   const handleViewDetail = async (check: Check) => {
     setDetailCheck(check);
