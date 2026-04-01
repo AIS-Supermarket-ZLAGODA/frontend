@@ -11,6 +11,7 @@ export default function StorePage() {
 
   const [searchName, setSearchName] = useState("");
   const [orderByQuantity, setOrderByQuantity] = useState(false);
+  const [promotionalFilter, setPromotionalFilter] = useState<string>("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<StoreProduct | null>(null);
@@ -38,6 +39,7 @@ export default function StorePage() {
       const params: any = {};
       if (searchName) params.product_name = searchName;
       if (orderByQuantity) params.order_by_products_number = true;
+      if (promotionalFilter !== "") params.promotional_product_filter = promotionalFilter;
 
       const [prodRes, storeRes] = await Promise.all([
         api.get("/products/"),
@@ -57,7 +59,7 @@ export default function StorePage() {
       fetchData();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchName, orderByQuantity]);
+  }, [searchName, orderByQuantity, promotionalFilter]);
 
   const handleViewDetails = async (upc: string) => {
     setDetailsLoading(true);
@@ -214,13 +216,23 @@ export default function StorePage() {
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4">
-          <input
+        <input
             type="text"
             placeholder="Пошук за назвою товару..."
             value={searchName}
             onChange={e => setSearchName(e.target.value)}
             className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-          />
+        />
+
+        <select
+            value={promotionalFilter}
+            onChange={e => setPromotionalFilter(e.target.value)}
+            className="flex-1 sm:max-w-xs px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+        >
+          <option value="">Всі товари</option>
+          <option value="true">Акційні</option>
+          <option value="false">Не акційні</option>
+        </select>
       </div>
 
       <div className="bg-white shadow-sm border border-gray-100 rounded-lg overflow-x-auto">
