@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type {StoreProduct} from "../../types/StoreProduct.ts";
+import type {StoreProduct, StoreProductDetail} from "../../types/StoreProduct.ts";
 import type {ProductShort} from "../../types/Product.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
@@ -15,13 +15,17 @@ export default function StorePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<StoreProduct | null>(null);
 
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [detailsItem, setDetailsItem] = useState<StoreProductDetail | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
-    UPC: "",
+    upc: "",
     id_product: "",
     selling_price: "",
     products_number: "",
     promotional_product: false,
-    UPC_prom: ""
+    upc_prom: ""
   });
   const [error, setError] = useState("");
 
@@ -55,48 +59,62 @@ export default function StorePage() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchName, orderByQuantity]);
 
+  const handleViewDetails = async (upc: string) => {
+    setDetailsLoading(true);
+    setIsDetailsModalOpen(true);
+    try {
+      const res = await api.get(`/store-products/${upc}/`);
+      setDetailsItem(res.data);
+    } catch (err) {
+      console.error("Помилка завантаження деталей:", err);
+      setError("Не вдалося завантажити характеристики товару");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
   const handleOpenModal = (item?: StoreProduct) => {
     setError("");
     if (item) {
       setCurrentItem(item);
       setFormData({
-        UPC: item.UPC,
+        upc: item.upc,
         id_product: String(item.id_product),
         selling_price: String(item.selling_price),
         products_number: String(item.products_number),
         promotional_product: item.promotional_product,
-        UPC_prom: item.UPC_prom || ""
+        upc_prom: item.upc_prom || ""
       });
     } else {
       setCurrentItem(null);
       setFormData({
-        UPC: "",
+        upc: "",
         id_product: products.length > 0 ? String(products[0].id_product) : "",
         selling_price: "",
         products_number: "",
         promotional_product: false,
-        UPC_prom: ""
+        upc_prom: ""
       });
     }
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!formData.UPC || !formData.id_product || !formData.selling_price || !formData.products_number) {
+    if (!formData.upc || !formData.id_product || !formData.selling_price || !formData.products_number) {
       setError("Усі обов'язкові поля мають бути заповнені");
       return;
     }
     try {
       const payload = {
-        UPC: formData.UPC,
+        upc: formData.upc,
         id_product: Number(formData.id_product),
         selling_price: Number(formData.selling_price),
         products_number: Number(formData.products_number),
         promotional_product: formData.promotional_product,
-        UPC_prom: formData.UPC_prom || null
+        upc_prom: formData.upc_prom || null
       };
       if (currentItem) {
-        await api.put(`/store-products/${currentItem.UPC}/`, payload);
+        await api.put(`/store-products/${currentItem.upc}/`, payload);
       } else {
         await api.post("/store-products/", payload);
       }
@@ -139,14 +157,14 @@ export default function StorePage() {
   };
 
   const exportCSV = () => {
-    const headers = ["UPC", "Товар", "Ціна", "Кількість", "Акційний", "Акційний UPC"];
+    const headers = ["upc", "Товар", "Ціна", "Кількість", "Акційний", "Акційний upc"];
     const rows = storeProducts.map(sp => [
-      `"${sp.UPC}"`,
+      `"${sp.upc}"`,
       `"${(sp.product_name || getProductName(sp.id_product)).replace(/"/g, '""')}"`,
       sp.selling_price,
       sp.products_number,
       sp.promotional_product ? "Так" : "Ні",
-      sp.UPC_prom || ""
+      sp.upc_prom || ""
     ]);
     const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
@@ -158,12 +176,12 @@ export default function StorePage() {
 
   const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(storeProducts.map(sp => ({
-      "UPC": sp.UPC,
+      "upc": sp.upc,
       "Товар": sp.product_name || getProductName(sp.id_product),
       "Ціна": sp.selling_price,
       "Кількість": sp.products_number,
       "Акційний": sp.promotional_product ? "Так" : "Ні",
-      "Акційний UPC": sp.UPC_prom || ""
+      "Акційний upc": sp.upc_prom || ""
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Товари в магазині");
@@ -209,7 +227,7 @@ export default function StorePage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">UPC</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">upc</th>
               <th
                   onClick={() => setOrderByQuantity(false)}
                   className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase cursor-pointer hover:text-indigo-600 transition-colors flex items-center gap-1"
@@ -224,14 +242,19 @@ export default function StorePage() {
                   Кількість {orderByQuantity ? "▼" : "↕"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Акційний</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Акційний UPC</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Акційний upc</th>
               <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Дії</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {storeProducts.map((sp) => (
-              <tr key={sp.UPC} className="hover:bg-indigo-50/50 transition-colors group">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{sp.UPC}</td>
+              <tr key={sp.upc} className="hover:bg-indigo-50/50 transition-colors group">
+                <td
+                    className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600 hover:text-indigo-900 cursor-pointer underline underline-offset-2"
+                    onClick={() => handleViewDetails(sp.upc)}
+                >
+                  {sp.upc}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{sp.product_name || getProductName(sp.id_product)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{Number(sp.selling_price).toFixed(2)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sp.products_number}</td>
@@ -242,10 +265,10 @@ export default function StorePage() {
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Ні</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sp.UPC_prom || "—"}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sp.upc_prom || "—"}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right space-x-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                   <button onClick={() => handleOpenModal(sp)} className="text-indigo-600 hover:text-indigo-900 cursor-pointer">Редагувати</button>
-                  <button onClick={() => handleDeleteClick(sp.UPC)} className="text-red-500 hover:text-red-700 cursor-pointer">Видалити</button>
+                  <button onClick={() => handleDeleteClick(sp.upc)} className="text-red-500 hover:text-red-700 cursor-pointer">Видалити</button>
                 </td>
               </tr>
             ))}
@@ -263,6 +286,59 @@ export default function StorePage() {
         </table>
       </div>
 
+      {isDetailsModalOpen && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl relative">
+              <button
+                  onClick={() => setIsDetailsModalOpen(false)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >✕
+              </button>
+
+              <h3 className="text-2xl font-bold mb-6 text-gray-800">Інформація про товар</h3>
+
+              {detailsLoading ? (
+                  <div className="text-center py-10">Завантаження...</div>
+              ) : detailsItem ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-between border-b pb-2">
+                      <span className="text-gray-500">upc:</span>
+                      <span className="font-mono font-bold">{detailsItem.upc}</span>
+                    </div>
+                    <div className="flex justify-between border-b pb-2">
+                      <span className="text-gray-500">Назва:</span>
+                      <span className="font-semibold">{detailsItem.product_name}</span>
+                    </div>
+                    <div className="flex justify-between border-b pb-2">
+                      <span className="text-gray-500">Ціна продажу:</span>
+                      <span
+                          className="text-indigo-600 font-bold">{Number(detailsItem.selling_price).toFixed(2)} грн</span>
+                    </div>
+                    <div className="flex justify-between border-b pb-2">
+                      <span className="text-gray-500">Кількість у наявності:</span>
+                      <span className="font-semibold">{detailsItem.products_number} шт.</span>
+                    </div>
+                    <div className="pt-2">
+                      <span className="text-gray-500 block mb-1">Характеристики:</span>
+                      <p className="text-gray-700 bg-gray-50 p-4 rounded-lg italic">
+                        {detailsItem.characteristics || "Характеристики відсутні"}
+                      </p>
+                    </div>
+                  </div>
+              ) : null}
+
+              <div className="mt-8 flex justify-end">
+                <button
+                    onClick={() => setIsDetailsModalOpen(false)}
+                    className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                >
+                  Закрити
+                </button>
+              </div>
+            </div>
+          </div>
+      )}
+
       {/* Add/Edit modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -270,13 +346,13 @@ export default function StorePage() {
             <h3 className="text-xl font-bold mb-6 text-gray-800">{currentItem ? "Редагувати товар" : "Новий товар в магазині"}</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">UPC</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">upc</label>
                 <input
                   type="text"
-                  value={formData.UPC}
-                  onChange={(e) => setFormData({...formData, UPC: e.target.value})}
+                  value={formData.upc}
+                  onChange={(e) => setFormData({...formData, upc: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
-                  placeholder="Введіть UPC"
+                  placeholder="Введіть upc"
                   disabled={!!currentItem}
                 />
               </div>
@@ -325,15 +401,15 @@ export default function StorePage() {
                 <label htmlFor="promotional" className="text-sm font-medium text-gray-700 cursor-pointer">Акційний товар</label>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Акційний UPC (необов'язково)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Акційний upc (необов'язково)</label>
                 <select
-                  value={formData.UPC_prom}
-                  onChange={(e) => setFormData({...formData, UPC_prom: e.target.value})}
+                  value={formData.upc_prom}
+                  onChange={(e) => setFormData({...formData, upc_prom: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer transition-shadow"
                 >
                   <option value="">Немає</option>
-                  {storeProducts.filter(sp => sp.UPC !== formData.UPC).map(sp => (
-                    <option key={sp.UPC} value={sp.UPC}>{sp.UPC} — {sp.product_name || getProductName(sp.id_product)}</option>
+                  {storeProducts.filter(sp => sp.upc !== formData.upc).map(sp => (
+                    <option key={sp.upc} value={sp.upc}>{sp.upc} — {sp.product_name || getProductName(sp.id_product)}</option>
                   ))}
                 </select>
               </div>
