@@ -1,21 +1,7 @@
 import { useState, useEffect } from "react";
+import type {Employee} from "../../types/Employee.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
-
-interface Employee {
-  id_employee: string;
-  empl_surname: string;
-  empl_name: string;
-  empl_patronymic: string | null;
-  empl_role: string;
-  salary: number;
-  date_of_birth: string;
-  date_of_start: string;
-  phone_number: string;
-  city: string;
-  street: string;
-  zip_code: string;
-}
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);

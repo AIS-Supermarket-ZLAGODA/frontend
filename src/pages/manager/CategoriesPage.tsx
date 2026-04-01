@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react";
+import type {Category} from "../../types/Category.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
-
-interface Category {
-  category_number: number;
-  category_name: string;
-}
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);

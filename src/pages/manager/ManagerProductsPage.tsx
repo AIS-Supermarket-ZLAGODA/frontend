@@ -1,19 +1,8 @@
 import { useState, useEffect } from "react";
+import type {Category} from "../../types/Category.ts";
+import type {Product} from "../../types/Product.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
-
-interface Product {
-  id_product: number;
-  category_number: number;
-  product_name: string;
-  producer: string;
-  characteristics: string;
-}
-
-interface Category {
-  category_number: number;
-  category_name: string;
-}
 
 export default function ManagerProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);

@@ -5,3 +5,5 @@ export interface Product {
   producer: string;
   characteristics: string;
 }
+
+export type ProductShort = Pick<Product, 'id_product' | 'product_name'>;

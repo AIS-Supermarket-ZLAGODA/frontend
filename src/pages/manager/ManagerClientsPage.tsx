@@ -1,18 +1,7 @@
 import { useState, useEffect } from "react";
+import type {CustomerCard} from "../../types/CustomerCard.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
-
-interface CustomerCard {
-  card_number: string;
-  cust_surname: string;
-  cust_name: string;
-  cust_patronymic: string | null;
-  phone_number: string;
-  city: string | null;
-  street: string | null;
-  zip_code: string | null;
-  percent: number;
-}
 
 export default function ManagerClientsPage() {
   const [customers, setCustomers] = useState<CustomerCard[]>([]);

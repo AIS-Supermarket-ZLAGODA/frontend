@@ -3,7 +3,7 @@ export interface Employee {
   empl_surname: string;
   empl_name: string;
   empl_patronymic: string | null;
-  empl_role: "Cashier" | "Manager";
+  empl_role: string;
   salary: number;
   date_of_birth: string;
   date_of_start: string;
@@ -12,3 +12,5 @@ export interface Employee {
   street: string;
   zip_code: string;
 }
+
+export type EmployeeShort = Pick<Employee, 'id_employee' | 'empl_surname' | 'empl_name'>

@@ -1,25 +1,12 @@
 import { useState, useEffect } from "react";
+import type {StoreProduct} from "../../types/StoreProduct.ts";
+import type {ProductShort} from "../../types/Product.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
 
-interface StoreProduct {
-  UPC: string;
-  UPC_prom: string | null;
-  id_product: number;
-  selling_price: number;
-  products_number: number;
-  promotional_product: boolean;
-  product_name?: string;
-}
-
-interface Product {
-  id_product: number;
-  product_name: string;
-}
-
 export default function StorePage() {
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductShort[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [searchName, setSearchName] = useState("");

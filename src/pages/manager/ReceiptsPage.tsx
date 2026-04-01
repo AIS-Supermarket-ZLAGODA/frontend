@@ -1,34 +1,13 @@
 import { useState, useEffect } from "react";
+import type {Check, SaleItem} from "../../types/Check.ts";
+import type {EmployeeShort} from "../../types/Employee.ts"
 import api from "../../api/api";
 import * as XLSX from "xlsx";
 
-interface Check {
-  check_number: string;
-  id_employee: string;
-  card_number: string | null;
-  print_date: string;
-  sum_total: number;
-  vat: number;
-  empl_surname?: string;
-  empl_name?: string;
-}
-
-interface SaleItem {
-  UPC: string;
-  product_number: number;
-  selling_price: number;
-  product_name?: string;
-}
-
-interface Employee {
-  id_employee: string;
-  empl_surname: string;
-  empl_name: string;
-}
 
 export default function ReceiptsPage() {
   const [checks, setChecks] = useState<Check[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<EmployeeShort[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [filterEmployee, setFilterEmployee] = useState("");

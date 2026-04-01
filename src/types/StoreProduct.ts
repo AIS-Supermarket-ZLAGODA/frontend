@@ -5,4 +5,5 @@ export interface StoreProduct {
   selling_price: number;
   products_number: number;
   promotional_product: boolean;
+  product_name?: string;
 }
