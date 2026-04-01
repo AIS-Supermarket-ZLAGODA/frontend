@@ -13,6 +13,7 @@ export default function ReceiptsPage() {
   const [filterEmployee, setFilterEmployee] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [summary, setSummary] = useState({ total_sum: 0, total_vat: 0 });
 
   const [detailCheck, setDetailCheck] = useState<Check | null>(null);
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
@@ -41,10 +42,15 @@ export default function ReceiptsPage() {
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
 
-      const res = await api.get("/checks/", {params});
-      setChecks(res.data);
+      const [listRes, summaryRes] = await Promise.all([
+        api.get("/checks/", {params}),
+        api.get("/checks/summary/", {params})
+      ]);
+
+      setChecks(listRes.data);
+      setSummary(summaryRes.data);
     } catch (err) {
-      console.error("Помилка завантаження чеків:", err);
+      console.error("Помилка:", err);
     } finally {
       setLoading(false);
     }
@@ -187,6 +193,23 @@ export default function ReceiptsPage() {
         >
           Очистити все
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-indigo-500">
+          <span className="text-sm font-medium text-gray-500 uppercase">
+            {filterEmployee ? "Сума продажів касира" : "Загальна сума продажів"}
+          </span>
+          <div className="text-3xl font-bold text-gray-900 mt-1">
+            {Number(summary.total_sum).toFixed(2)} <span className="text-lg font-normal text-gray-400">грн</span>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
+          <span className="text-sm font-medium text-gray-500 uppercase">Всього ПДВ (20%)</span>
+          <div className="text-3xl font-bold text-gray-900 mt-1">
+            {Number(summary.total_vat).toFixed(2)} <span className="text-lg font-normal text-gray-400">грн</span>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white shadow-sm border border-gray-100 rounded-lg overflow-x-auto">
