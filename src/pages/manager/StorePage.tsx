@@ -23,6 +23,7 @@ export default function StorePage() {
   const [loading, setLoading] = useState(false);
 
   const [searchName, setSearchName] = useState("");
+  const [orderByQuantity, setOrderByQuantity] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<StoreProduct | null>(null);
@@ -43,9 +44,13 @@ export default function StorePage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const params: any = {};
+      if (searchName) params.product_name = searchName;
+      if (orderByQuantity) params.order_by_products_number = true;
+
       const [prodRes, storeRes] = await Promise.all([
         api.get("/products/"),
-        api.get("/store-products/", { params: searchName ? { product_name: searchName } : {} })
+        api.get("/store-products/", { params })
       ]);
       setProducts(prodRes.data);
       setStoreProducts(storeRes.data);
@@ -61,7 +66,7 @@ export default function StorePage() {
       fetchData();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchName]);
+  }, [searchName, orderByQuantity]);
 
   const handleOpenModal = (item?: StoreProduct) => {
     setError("");
@@ -218,9 +223,19 @@ export default function StorePage() {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">UPC</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Товар</th>
+              <th
+                  onClick={() => setOrderByQuantity(false)}
+                  className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase cursor-pointer hover:text-indigo-600 transition-colors flex items-center gap-1"
+              >
+                  Товар {orderByQuantity ? "↕" : "▼"}
+              </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ціна</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Кількість</th>
+              <th
+                  onClick={() => setOrderByQuantity(true)}
+                  className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase cursor-pointer hover:text-indigo-600 transition-colors flex items-center gap-1"
+              >
+                  Кількість {orderByQuantity ? "▼" : "↕"}
+              </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Акційний</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Акційний UPC</th>
               <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Дії</th>
