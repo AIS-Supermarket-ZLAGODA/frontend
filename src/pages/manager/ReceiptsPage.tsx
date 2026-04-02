@@ -4,7 +4,6 @@ import type {EmployeeShort} from "../../types/Employee.ts"
 import api from "../../api/api";
 import * as XLSX from "xlsx";
 
-
 export default function ReceiptsPage() {
   const [checks, setChecks] = useState<Check[]>([]);
   const [employees, setEmployees] = useState<EmployeeShort[]>([]);

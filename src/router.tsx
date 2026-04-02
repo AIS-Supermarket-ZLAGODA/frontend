@@ -15,6 +15,8 @@ import StorePage from "./pages/manager/StorePage";
 import ManagerClientsPage from "./pages/manager/ManagerClientsPage";
 import ReceiptsPage from "./pages/manager/ReceiptsPage";
 import RoleGuard from "./components/RoleGuard";
+import SalesAnalysisPage from "./pages/manager/reports/SalesAnalysisPage";
+import PromoCategoriesPage from "./pages/manager/reports/PromoCategoriesPage";
 
 export const router = createBrowserRouter([
   {
@@ -53,6 +55,8 @@ export const router = createBrowserRouter([
       { path: "store", element: <StorePage /> },
       { path: "clients", element: <ManagerClientsPage /> },
       { path: "receipts", element: <ReceiptsPage /> },
+      { path: "reports/sales-analysis", element: <SalesAnalysisPage /> },
+      { path: "reports/promo-categories", element: <PromoCategoriesPage /> },
     ],
   },
   {
