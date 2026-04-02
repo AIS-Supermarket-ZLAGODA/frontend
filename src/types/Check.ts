@@ -15,3 +15,10 @@ export interface SaleItem {
   selling_price: number;
   product_name?: string;
 }
+
+export type SmallCheck = Pick<Check, 'check_number' | 'id_employee' | 'card_number' | 'print_date' | 'sum_total' | 'vat'>;
+
+export interface CheckDetail extends SmallCheck {
+  items?: SaleItem[];
+  sales?: SaleItem[];
+}

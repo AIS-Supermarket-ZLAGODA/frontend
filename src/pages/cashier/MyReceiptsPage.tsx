@@ -1,32 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
 import { useAuth } from "../../context/AuthContextLogic.ts"
-
-interface Check {
-  check_number: string;
-  id_employee: string;
-  card_number: string | null;
-  print_date: string;
-  sum_total: number;
-  vat: number;
-}
-
-interface SaleItem {
-  UPC: string;
-  product_name?: string;
-  product_number: number;
-  selling_price: number;
-}
-
-interface CheckDetail extends Check {
-  items?: SaleItem[];
-  sales?: SaleItem[];
-}
+import type {CheckDetail, SmallCheck} from "../../types/Check.ts";
 
 export default function MyReceiptsPage() {
   const { user } = useAuth();
 
-  const [checks, setChecks] = useState<Check[]>([]);
+  const [checks, setChecks] = useState<SmallCheck[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [dateFrom, setDateFrom] = useState("");

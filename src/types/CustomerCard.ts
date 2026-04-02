@@ -9,3 +9,5 @@ export interface CustomerCard {
   zip_code: string | null;
   percent: number;
 }
+
+export type SmallCustomerCard = Pick<CustomerCard, 'card_number' | 'cust_surname' | 'cust_name' | 'percent'>

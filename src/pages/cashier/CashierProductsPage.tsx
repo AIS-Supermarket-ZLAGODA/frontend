@@ -1,18 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
-
-interface Product {
-  id_product: number;
-  category_number: number;
-  product_name: string;
-  producer: string;
-  characteristics: string;
-}
-
-interface Category {
-  category_number: number;
-  category_name: string;
-}
+import type {Product} from "../../types/Product.ts";
+import type {Category} from "../../types/Category.ts";
 
 export default function CashierProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
