@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import api from "../../api/api";
 import { useAuth } from "../../context/AuthContextLogic";
+import type {SmallCustomerCard} from "../../types/CustomerCard.ts";
+import type {PosCartItem} from "../../types/StatCard.ts";
 
 interface StoreProduct {
   UPC: string;
@@ -11,21 +13,6 @@ interface StoreProduct {
   product_name?: string;
 }
 
-interface CartItem {
-  UPC: string;
-  product_name: string;
-  selling_price: number;
-  quantity: number;
-  max_quantity: number;
-}
-
-interface CustomerCard {
-  card_number: string;
-  cust_surname: string;
-  cust_name: string;
-  percent: number;
-}
-
 export default function PosPage() {
   const { user } = useAuth();
 
@@ -33,11 +20,11 @@ export default function PosPage() {
   const [loading, setLoading] = useState(false);
   const [searchName, setSearchName] = useState("");
 
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<PosCartItem[]>([]);
 
-  const [customers, setCustomers] = useState<CustomerCard[]>([]);
+  const [customers, setCustomers] = useState<SmallCustomerCard[]>([]);
   const [customerSearch, setCustomerSearch] = useState("");
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerCard | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<SmallCustomerCard | null>(null);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -122,7 +109,7 @@ export default function PosPage() {
     setCart((prev) => prev.filter((item) => item.UPC !== UPC));
   };
 
-  const selectCustomer = (customer: CustomerCard) => {
+  const selectCustomer = (customer: SmallCustomerCard) => {
     setSelectedCustomer(customer);
     setCustomerSearch(`${customer.cust_surname} ${customer.cust_name}`);
     setShowCustomerDropdown(false);
