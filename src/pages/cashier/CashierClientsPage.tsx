@@ -25,7 +25,7 @@ export default function CashierClientsPage() {
     setLoading(true);
     try {
       const params: Record<string, string> = {};
-      if (surname?.trim()) params.cust_surname = surname;
+      if (surname?.trim()) params.surname = surname;
       const res = await api.get("/customers/", { params });
       const sorted = res.data.sort((a: CustomerCard, b: CustomerCard) =>
         a.cust_surname.localeCompare(b.cust_surname)
