@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type {Employee} from "../../types/Employee.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
+import DatePicker from "../../components/DatePicker";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -370,19 +371,17 @@ export default function EmployeesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Дата народження</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={formData.date_of_birth}
-                  onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+                  onChange={(v) => setFormData({...formData, date_of_birth: v})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Дата початку роботи</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={formData.date_of_start}
-                  onChange={(e) => setFormData({...formData, date_of_start: e.target.value})}
+                  onChange={(v) => setFormData({...formData, date_of_start: v})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
                 />
               </div>
