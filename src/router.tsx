@@ -17,6 +17,8 @@ import ReceiptsPage from "./pages/manager/ReceiptsPage";
 import RoleGuard from "./components/RoleGuard";
 import SalesAnalysisPage from "./pages/manager/reports/SalesAnalysisPage";
 import PromoCategoriesPage from "./pages/manager/reports/PromoCategoriesPage";
+import ZmeulUniversalCategoriesPage from "./pages/manager/reports/ZmeulUniversalCategoriesPage";
+import ZmeulProducerPerformancePage from "./pages/manager/reports/ZmeulProducerPerformancePage";
 
 export const router = createBrowserRouter([
   {
@@ -57,6 +59,8 @@ export const router = createBrowserRouter([
       { path: "receipts", element: <ReceiptsPage /> },
       { path: "reports/sales-analysis", element: <SalesAnalysisPage /> },
       { path: "reports/promo-categories", element: <PromoCategoriesPage /> },
+      { path: "reports/producer-performance", element: <ZmeulProducerPerformancePage /> },
+      { path: "reports/universal-categories", element: <ZmeulUniversalCategoriesPage /> },
     ],
   },
   {

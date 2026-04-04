@@ -111,6 +111,20 @@ export default function DashboardPage() {
             path: "/manager/reports/promo-categories",
             color: "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100",
         },
+        {
+            title: "Ефективність виробників (Змеул)",
+            description: "Топ виробників у категорії",
+            icon: "📈",
+            path: "/manager/reports/producer-performance",
+            color: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100",
+        },
+        {
+            title: "Універсальні категорії (Змеул)",
+            description: "Категорії зі 100% покриттям по касирам",
+            icon: "🏷️",
+            path: "/manager/reports/universal-categories",
+            color: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100",
+        },
     ];
 
     return (
