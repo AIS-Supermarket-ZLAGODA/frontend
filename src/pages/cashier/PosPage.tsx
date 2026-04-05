@@ -51,7 +51,7 @@ export default function PosPage() {
     const delayDebounceFn = setTimeout(async () => {
       if (customerSearch.trim()) {
         try {
-          const res = await api.get("/customers/", { params: { cust_surname: customerSearch } });
+          const res = await api.get("/customers/", { params: { surname: customerSearch } });
           setCustomers(res.data);
           setShowCustomerDropdown(true);
         } catch (err) {

@@ -3,6 +3,7 @@ import type {Category} from "../../types/Category.ts";
 import type {Product} from "../../types/Product.ts";
 import api from "../../api/api";
 import * as XLSX from "xlsx";
+import DatePicker from "../../components/DatePicker";
 
 export default function ManagerProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -418,19 +419,17 @@ export default function ManagerProductsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 ml-1">Дата з</label>
-                    <input
-                        type="date"
+                    <DatePicker
                         value={statsDateFrom}
-                        onChange={e => setStatsDateFrom(e.target.value)}
+                        onChange={setStatsDateFrom}
                         className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 ml-1">Дата по</label>
-                    <input
-                        type="date"
+                    <DatePicker
                         value={statsDateTo}
-                        onChange={e => setStatsDateTo(e.target.value)}
+                        onChange={setStatsDateTo}
                         className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
