@@ -3,15 +3,7 @@ import api from "../../api/api";
 import { useAuth } from "../../context/AuthContextLogic";
 import type {SmallCustomerCard} from "../../types/CustomerCard.ts";
 import type {PosCartItem} from "../../types/StatCard.ts";
-
-interface StoreProduct {
-  UPC: string;
-  id_product: number;
-  selling_price: number;
-  products_number: number;
-  promotional_product: boolean;
-  product_name?: string;
-}
+import type {StoreProduct} from "../../types/StoreProduct.ts";
 
 export default function PosPage() {
   const { user } = useAuth();
@@ -75,18 +67,18 @@ export default function PosPage() {
 
   const addToCart = (product: StoreProduct) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.UPC === product.UPC);
+      const existing = prev.find((item) => item.upc === product.upc);
       if (existing) {
         if (existing.quantity >= existing.max_quantity) return prev;
         return prev.map((item) =>
-          item.UPC === product.UPC ? { ...item, quantity: item.quantity + 1 } : item
+          item.upc === product.upc ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
       return [
         ...prev,
         {
-          UPC: product.UPC,
-          product_name: product.product_name || product.UPC,
+          upc: product.upc,
+          product_name: product.product_name || product.upc,
           selling_price: Number(product.selling_price),
           quantity: 1,
           max_quantity: product.products_number,
@@ -95,18 +87,18 @@ export default function PosPage() {
     });
   };
 
-  const updateCartQuantity = (UPC: string, qty: number) => {
+  const updateCartQuantity = (upc: string, qty: number) => {
     setCart((prev) =>
       prev.map((item) => {
-        if (item.UPC !== UPC) return item;
+        if (item.upc !== upc) return item;
         const newQty = Math.max(1, Math.min(qty, item.max_quantity));
         return { ...item, quantity: newQty };
       })
     );
   };
 
-  const removeFromCart = (UPC: string) => {
-    setCart((prev) => prev.filter((item) => item.UPC !== UPC));
+  const removeFromCart = (upc: string) => {
+    setCart((prev) => prev.filter((item) => item.upc !== upc));
   };
 
   const selectCustomer = (customer: SmallCustomerCard) => {
@@ -140,7 +132,7 @@ export default function PosPage() {
         id_employee: user?.id_employee,
         card_number: selectedCustomer?.card_number || null,
         items: cart.map((item) => ({
-          UPC: item.UPC,
+          upc: item.upc,
           product_number: item.quantity,
         })),
       };
@@ -204,7 +196,7 @@ export default function PosPage() {
               <thead className="bg-slate-50 sticky top-0">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Назва</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">UPC</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">upc</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Ціна</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Залишок</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider"></th>
@@ -212,16 +204,16 @@ export default function PosPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
                 {filteredProducts.map((p) => {
-                  const inCart = cart.find((c) => c.UPC === p.UPC);
+                  const inCart = cart.find((c) => c.upc === p.upc);
                   return (
-                    <tr key={p.UPC} className="hover:bg-emerald-50/40 transition-colors">
+                    <tr key={p.upc} className="hover:bg-emerald-50/40 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
                         {p.product_name || "—"}
                         {p.promotional_product && (
                           <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">Акція</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-mono">{p.UPC}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-mono">{p.upc}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right font-medium">{Number(p.selling_price).toFixed(2)} грн</td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">{p.products_number}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-center">
@@ -270,14 +262,14 @@ export default function PosPage() {
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {cart.map((item) => (
-                  <div key={item.UPC} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                  <div key={item.upc} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{item.product_name}</p>
                       <p className="text-xs text-gray-500">{item.selling_price.toFixed(2)} грн/шт</p>
                     </div>
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => updateCartQuantity(item.UPC, item.quantity - 1)}
+                        onClick={() => updateCartQuantity(item.upc, item.quantity - 1)}
                         className="w-7 h-7 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-bold transition-colors cursor-pointer"
                       >
                         -
@@ -287,11 +279,11 @@ export default function PosPage() {
                         min={1}
                         max={item.max_quantity}
                         value={item.quantity}
-                        onChange={(e) => updateCartQuantity(item.UPC, parseInt(e.target.value) || 1)}
+                        onChange={(e) => updateCartQuantity(item.upc, parseInt(e.target.value) || 1)}
                         className="w-12 text-center text-sm border border-gray-200 rounded py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                       <button
-                        onClick={() => updateCartQuantity(item.UPC, item.quantity + 1)}
+                        onClick={() => updateCartQuantity(item.upc, item.quantity + 1)}
                         disabled={item.quantity >= item.max_quantity}
                         className="w-7 h-7 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 text-gray-700 text-sm font-bold transition-colors cursor-pointer disabled:cursor-not-allowed"
                       >
@@ -302,7 +294,7 @@ export default function PosPage() {
                       {(item.selling_price * item.quantity).toFixed(2)}
                     </p>
                     <button
-                      onClick={() => removeFromCart(item.UPC)}
+                      onClick={() => removeFromCart(item.upc)}
                       className="text-red-400 hover:text-red-600 text-lg font-bold transition-colors cursor-pointer ml-1"
                     >
                       &times;
