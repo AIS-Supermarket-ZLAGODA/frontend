@@ -8,7 +8,7 @@ export interface StatCard {
 }
 
 export interface PosCartItem {
-  UPC: string;
+  upc: string;
   product_name: string;
   selling_price: number;
   quantity: number;
