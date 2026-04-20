@@ -56,59 +56,6 @@ export default function LapkoReportsPage() {
         fetchCategories();
     }, []);
 
-    /**
-     * =====================================================================
-     * ПОВНИЙ КОД ПРИКЛАДНОЇ ПРОГРАМИ ДЛЯ ЗАПИТУ 1 (GROUP BY, параметричний)
-     * =====================================================================
-     *
-     * Послідовність дій від натискання кнопки "Сформувати" до виводу:
-     *
-     *  1. Користувач обирає категорію у <select> та (опціонально) дати у
-     *     компоненті DatePicker. Значення тримаються у React state:
-     *     q1Category, q1DateFrom, q1DateTo.
-     *
-     *  2. Користувач натискає кнопку "Сформувати" — викликається fetchQ1().
-     *
-     *  3. Формуємо об'єкт query-параметрів. Порожні дати не додаємо, щоб
-     *     бекенд не фільтрував за ними. Обов'язковий параметр — category_name.
-     *
-     *  4. api.get() — це налаштований екземпляр axios (див. api/api.ts), який
-     *     автоматично:
-     *       a) будує повний URL: http://<host>/api/reports/lapko/
-     *          customers-category-spending/?category_name=...&date_from=...
-     *       b) підставляє в заголовок Authorization токен Bearer з localStorage;
-     *       c) серіалізує параметри URL-encoding.
-     *
-     *  5. HTTP-запит йде на Django-сервер. Router (ais/urls.py) співставляє
-     *     шлях з LapkoCustomerSpendingView.get(). View валідує параметри
-     *     через LapkoCustomerSpendingRequestSerializer (DRF перевіряє типи
-     *     та обов'язковість поля category_name).
-     *
-     *  6. View викликає LapkoReportService.get_customers_category_spending(),
-     *     сервіс — LapkoReportRepository, який:
-     *       a) відкриває курсор на з'єднанні psycopg2 (connection.cursor);
-     *       b) динамічно будує текст SQL-запиту, додаючи фільтри за датою
-     *          тільки якщо вони задані (захист від SQL-ін'єкцій — параметри
-     *          передаються окремим списком params, не конкатенацією);
-     *       c) виконує cursor.execute(query, params) — драйвер psycopg2
-     *          параметризує запит і відправляє його у PostgreSQL;
-     *       d) PostgreSQL виконує SELECT з INNER JOIN по 6 таблицях
-     *          (Customer_Card, Check, Sale, Store_Product, Product, Category),
-     *          групує по клієнту, обчислює агрегати COUNT/SUM;
-     *       e) отримані рядки перетворюються у список dict через
-     *          zip(columns, row), де columns беруться з cursor.description.
-     *
-     *  7. Service повертає список у View, View загортає у rest_framework
-     *     Response (JSON, HTTP 200). Бекенд відправляє відповідь.
-     *
-     *  8. axios resolve'иться. res.data — це масив SpendingRow. Записуємо у
-     *     state через setQ1Data(...). React перерендерює компонент, і таблиця
-     *     нижче наповнюється даними.
-     *
-     *  9. У випадку помилки (400 — невалідні параметри, 500 — БД):
-     *     catch-блок логує помилку у консоль; finally гарантує вимкнення
-     *     стану завантаження (setQ1Loading(false)).
-     */
     const fetchQ1 = async () => {
         setQ1Loading(true);
         setQ1Touched(true);
