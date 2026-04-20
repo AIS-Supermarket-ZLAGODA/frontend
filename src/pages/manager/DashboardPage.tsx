@@ -125,6 +125,13 @@ export default function DashboardPage() {
             path: "/manager/reports/universal-categories",
             color: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100",
         },
+        {
+            title: "Звіти Лапка",
+            description: "Активність клієнтів у категорії та клієнти, що купили всі товари",
+            icon: "👥",
+            path: "/manager/reports/lapko",
+            color: "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100",
+        },
     ];
 
     return (
