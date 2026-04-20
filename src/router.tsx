@@ -19,6 +19,7 @@ import SalesAnalysisPage from "./pages/manager/reports/SalesAnalysisPage";
 import PromoCategoriesPage from "./pages/manager/reports/PromoCategoriesPage";
 import ZmeulUniversalCategoriesPage from "./pages/manager/reports/ZmeulUniversalCategoriesPage";
 import ZmeulProducerPerformancePage from "./pages/manager/reports/ZmeulProducerPerformancePage";
+import LapkoReportsPage from "./pages/manager/reports/LapkoReportsPage";
 
 export const router = createBrowserRouter([
   {
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
       { path: "reports/promo-categories", element: <PromoCategoriesPage /> },
       { path: "reports/producer-performance", element: <ZmeulProducerPerformancePage /> },
       { path: "reports/universal-categories", element: <ZmeulUniversalCategoriesPage /> },
+      { path: "reports/lapko", element: <LapkoReportsPage /> },
     ],
   },
   {
